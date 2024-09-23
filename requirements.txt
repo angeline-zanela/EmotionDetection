@@ -1,6 +1,13 @@
+streamlit
 opencv-python-headless
 numpy
 tensorflow
 dlib-bin
 tensorflow
 mediapipe
+textblob
+scipy
+pytesseract
+nltk
+pandas
+scikit-learn
