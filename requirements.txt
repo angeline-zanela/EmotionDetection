@@ -1,5 +1,4 @@
 opencv-python
 numpy
 tensorflow
-dlib
-cmake
+dlib-bin
