@@ -1,6 +1,6 @@
-streamlit==1.38.0
+streamlit
 opencv-python-headless
 numpy
-tensorflow==2.11.0
+tensorflow
 dlib-bin
 mediapipe
