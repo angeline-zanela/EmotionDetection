@@ -5,3 +5,4 @@ tensorflow
 dlib-bin
 tensorflow
 mediapipe
+cv2
