@@ -1,6 +1,6 @@
-streamlit
+streamlit==1.38.0
 opencv-python-headless
 numpy
-tensorflow
-dlib-bin
+tensorflow==2.11.0
 mediapipe
+dlib-bin==19.24.2.post1  # versão pré-compilada do dlib para evitar problemas de compilação
