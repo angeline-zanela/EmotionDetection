@@ -1,0 +1,6 @@
+*.h5 filter=lfs diff=lfs merge=lfs -text
+*.dat filter=lfs diff=lfs merge=lfs -text
+modelo_emocao_face_4classes.weights.h5 filter=lfs diff=lfs merge=lfs -text
+modelo_emocao_face_V3_4classes.weights.h5 filter=lfs diff=lfs merge=lfs -text
+modelo_emocao_face_vgg16_landmarks.weights.h5 filter=lfs diff=lfs merge=lfs -text
+modelo_landmarks_gesto_emocoes_libras.h5 filter=lfs diff=lfs merge=lfs -text
