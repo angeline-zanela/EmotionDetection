@@ -1,2 +1,5 @@
-freeglut3-dev
-libgtk2.0-dev
+opencv-python
+numpy
+tensorflow
+dlib
+cmake
