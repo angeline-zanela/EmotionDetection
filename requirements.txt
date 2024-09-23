@@ -2,4 +2,5 @@ streamlit
 opencv-python
 numpy
 tensorflow
-dlib
+dlib==19.21.0
+
