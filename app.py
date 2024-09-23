@@ -90,7 +90,6 @@ def extract_hand_landmarks(img):
 
 # Função para combinar as predições dos dois modelos
 def combine_predictions(face_pred, gesture_pred):
-    # Combine as predições utilizando média ou máxima confiança
     combined_confidences = (face_pred + gesture_pred) / 2
     dominant_class = np.argmax(combined_confidences)
     confidence = combined_confidences[dominant_class] * 100  # Confiança final como porcentagem
