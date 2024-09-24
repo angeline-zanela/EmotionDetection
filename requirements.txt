@@ -1,7 +1,7 @@
 streamlit==1.43.0
-opencv-python-headless
-numpy
-tensorflow==2.11.0
-mediapipe
-dlib-bin==19.24.2.post1
-streamlit-webrtc
+opencv-python-headless==4.5.5.64  # OpenCV para manipulação de imagens
+numpy==1.21.6  # Manipulação de arrays numéricos
+tensorflow==2.11.0  # Framework para redes neurais
+mediapipe==0.8.9  # Detecção de mãos e rostos
+dlib==19.24.0  # Usado para landmarks faciais
+streamlit-webrtc==0.40.0  # Para transmissão de vídeo ao vivo na interface Streamlit
