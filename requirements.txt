@@ -6,7 +6,7 @@ cachetools==5.3.3
 cffi==1.16.0
 charset-normalizer==3.1.0
 click==8.1.7
-dlib==19.22.1 
+dlib==19.24.0  # Usado para landmarks faciais
 flatbuffers==24.3.25
 fonttools==4.39.4
 gast==0.4.0
@@ -26,11 +26,11 @@ kiwisolver==1.4.4
 libclang==18.1.1
 Markdown==3.6
 matplotlib==3.7.1
-mediapipe==0.10.14
+mediapipe==0.10.14  # Detecção de mãos e rostos
 ml-dtypes==0.3.2
-numpy==1.24.3
+numpy==1.21.6  # Manipulação de arrays numéricos
 opencv-contrib-python==4.9.0.80
-opencv-python==4.7.0.72
+opencv-python-headless==4.5.5.64  # OpenCV para manipulação de imagens
 pandas==2.2.2
 Pillow==9.5.0
 protobuf==4.25.4
@@ -44,10 +44,9 @@ scikit-learn==1.5.1
 scipy==1.10.1
 seaborn==0.13.2
 six==1.16.0
-streamlit==1.38.0
-tensorflow==2.17.0
-tensorflow-cpu==2.17.0
-tensorflow-estimator==2.9.0
+streamlit==1.43.0  # Interface principal
+streamlit-webrtc==0.40.0  # Para transmissão de vídeo ao vivo na interface Streamlit
+tensorflow==2.11.0  # Framework para redes neurais
 termcolor==2.4.0
 urllib3==2.0.3
 watchdog==4.0.2
