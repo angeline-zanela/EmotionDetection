@@ -1,3 +1,5 @@
+#Essa interface foi construída para Classificar emoções em LIBRAS, sendo assim será aberto a camera em tempo real e capturado uma imagem para ser classificada.
+
 import streamlit as st
 import dlib
 import cv2
@@ -98,7 +100,7 @@ def combine_predictions(face_pred, gesture_pred):
 num_classes = 4  # 'Feliz', 'Raiva', 'Surpreso', 'Triste'
 face_model = create_face_model((224, 224, 3), (68 * 2,), num_classes)
 # Atualize se quiser testar cos outros 2 modelos treinados da face em diferentes contextos, o que está setado é o que tem maior taxa de sucesso
-face_model.load_weights('modelo_emocao_face_vgg16_landmarks.weights.h5')
+face_model.load_weights('modelo_emocao_face_4classes.weights.h5')
 
 Esse modelo foi o mais assertivo então ele foi o único gerado
 gesture_model = tf.keras.models.load_model('modelo_landmarks_gesto_emocoes_libras.h5') 
