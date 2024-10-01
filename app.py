@@ -8,13 +8,18 @@ from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Input, Concat
 from tensorflow.keras.applications import VGG16
 from PIL import Image
 
+# Carrega o classificador Haar Cascade pré-treinado para detecção de rostos
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
+# Carrega o preditor de landmarks faciais da dlib
 predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
+
+# Inicializar MediaPipe para detecção de mãos
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(static_image_mode=False, max_num_hands=1, 
                        min_detection_confidence=0.7, min_tracking_confidence=0.7)
 
-# Função que cria o modelo de emoções faciais com VGG16 e landmarks faciais
+# Função para criar o modelo de emoções faciais com VGG16 e landmarks faciais
 def create_face_model(input_shape_image, input_shape_landmarks, num_classes):
     base_model = VGG16(weights='imagenet', include_top=False, input_shape=input_shape_image)
     base_model.trainable = True
@@ -35,6 +40,7 @@ def create_face_model(input_shape_image, input_shape_landmarks, num_classes):
     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001), loss='sparse_categorical_crossentropy', metrics=['accuracy'])
     return model
 
+# Função para detectar rostos e landmarks usando dlib
 def detect_face_and_landmarks(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
@@ -87,25 +93,26 @@ def combine_predictions(face_pred, gesture_pred):
     # Combine as predições utilizando média ou máxima confiança
     combined_confidences = (face_pred + gesture_pred) / 2
     dominant_class = np.argmax(combined_confidences)
-    confidence = combined_confidences[dominant_class] * 100
+    confidence = combined_confidences[dominant_class] * 100  # Confiança final como porcentagem
     return dominant_class, confidence
 
 # Carregar os modelos e seus pesos
 num_classes = 4  # 'Feliz', 'Raiva', 'Surpreso', 'Triste'
 face_model = create_face_model((224, 224, 3), (68 * 2,), num_classes)
-face_model.load_weights('modelo_emocao_face__V3_4classes.weights.h5')
-gesture_model = tf.keras.models.load_model('modelo_landmarks_gesto_emocoes_libras.h5')  
+face_model.load_weights('modelo_emocao_face_vgg16_landmarks.weights.h5')
 
-# Função para upload e classificação da imagem
-def classify_uploaded_image():
-    st.title("Detecção de Emoções e Gestos em Imagem")
-    
-    uploaded_file = st.file_uploader("Envie uma imagem", type=["jpg", "jpeg", "png"])
-    
-    if uploaded_file is not None:
-        image = np.array(Image.open(uploaded_file))
-        st.image(image, caption='Imagem carregada', use_column_width=True)
-        
+gesture_model = tf.keras.models.load_model('modelo_landmarks_gesto_emocoes_libras.h5')  # Atualize o caminho conforme necessário
+
+# Função para capturar a imagem da câmera do navegador usando Streamlit
+def classify_realtime_streamlit():
+    st.title("Detecção de Emoções e Gestos em Tempo Real")
+    uploaded_image = st.camera_input("Capture uma imagem usando a câmera")
+
+    if uploaded_image is not None:
+        # Converte a imagem capturada em um array
+        image = np.array(Image.open(uploaded_image))
+        st.image(image, caption='Imagem capturada', use_column_width=True)
+
         class_names = ['Feliz', 'Raiva', 'Surpreso', 'Triste']
 
         # Detectar emoção facial
@@ -137,4 +144,4 @@ def classify_uploaded_image():
 
 # Iniciar a aplicação Streamlit
 if __name__ == '__main__':
-    classify_uploaded_image()
+    classify_realtime_streamlit()
