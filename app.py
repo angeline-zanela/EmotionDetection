@@ -1,82 +1,61 @@
-#Essa interface foi construída para Classificar emoções em LIBRAS, sendo assim será aberto a camera em tempo real e capturado uma imagem para ser classificada.
 
-import streamlit as st
-import dlib
-import cv2
+############################################################
+###  Usando o streamlit para classificação em tempo real ###
+############################################################
+
 import numpy as np
 import tensorflow as tf
+import cv2
+import dlib
 import mediapipe as mp
-from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Input, Concatenate, Dropout
+from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
+import streamlit as st
 from tensorflow.keras.applications import VGG16
-from PIL import Image
+from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Input, Concatenate, Dropout
 
-# Foi usado o classificador Haar Cascade pré-treinado para detecção de rostos.
-face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-
-# Usado esse arquivo para carregar os pontos do rosto
-predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
-
-# Usado o mediapipe para reconhecer os pontos das mãos
-mp_hands = mp.solutions.hands
-hands = mp_hands.Hands(static_image_mode=False, max_num_hands=1, 
-                       min_detection_confidence=0.7, min_tracking_confidence=0.7)
-
-# Cria o modelo, mas ele já está treinado
 def create_face_model(input_shape_image, input_shape_landmarks, num_classes):
     base_model = VGG16(weights='imagenet', include_top=False, input_shape=input_shape_image)
     base_model.trainable = True
-
     image_input = Input(shape=input_shape_image)
     landmarks_input = Input(shape=input_shape_landmarks)
-
     x = base_model(image_input)
     x = GlobalAveragePooling2D()(x)
     x = Dropout(0.5)(x)
-
     combined = Concatenate()([x, landmarks_input])
     combined = Dense(128, activation='relu')(combined)
     combined = Dropout(0.5)(combined)
     output = Dense(num_classes, activation='softmax')(combined)
-
     model = tf.keras.Model(inputs=[image_input, landmarks_input], outputs=output)
-    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001), loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001), 
+                  loss='sparse_categorical_crossentropy', 
+                  metrics=['accuracy'])
     return model
 
-# Essa função detecta on pontos com a dlib
+num_classes = 4
+face_model = create_face_model((224, 224, 3), (68 * 2,), num_classes)
+face_model.load_weights('modelo_emocao_face_4classes.weights.h5')
+gesture_model = tf.keras.models.load_model('modelo_landmarks_gesto_emocoes_libras.h5')
+mp_hands = mp.solutions.hands
+hands = mp_hands.Hands(static_image_mode=False, max_num_hands=1, 
+                       min_detection_confidence=0.7, min_tracking_confidence=0.7)
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
+
 def detect_face_and_landmarks(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-    
     if len(faces) > 0:
-        x, y, w, h = faces[0]  # Pega apenas 1 rosto na imagem
-        face_region = image[y:y+h, x:x+w]  # Recorta a região do rosto
-        face_region_gray = gray[y:y+h, x:x+w]  # Região do rosto em escala de cinza para melhorar a classificação
+        x, y, w, h = faces[0]
+        face_region = image[y:y+h, x:x+w]
         rect = dlib.rectangle(x, y, x+w, y+h)
-        landmarks = predictor(face_region_gray, rect)
+        landmarks = predictor(gray, rect)
         landmark_points = []
-        for i in range(0, 68):  # Usa os 68 landmarks fornecidos pelo dlib no .dat
+        for i in range(68):
             landmark_points.append([landmarks.part(i).x, landmarks.part(i).y])
-        return face_region, np.array(landmark_points).flatten()
-    else:
-        return None, None  # Retorna nada se nenhum rosto for detectado
+        return cv2.resize(face_region, (224, 224)), np.array(landmark_points).flatten()
+    return np.zeros((224, 224, 3)), np.zeros(68 * 2)
 
-# Função que verifica a validade dos landmarks
-def are_landmarks_valid(landmarks, image_shape):
-    if landmarks is None or len(landmarks) != 68 * 2:
-        return False
-    
-    x_points = landmarks[0::2]
-    y_points = landmarks[1::2]
-
-    if max(x_points) - min(x_points) < 0.2 * image_shape[1] or max(y_points) - min(y_points) < 0.2 * image_shape[0]:
-        return False
-
-    return True
-
-# Função que extrai os pontos da mão
 def extract_hand_landmarks(img):
-    if img.dtype == np.float32:
-        img = (img * 255).astype(np.uint8)
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     results = hands.process(img_rgb)
     if results.multi_hand_landmarks:
@@ -85,65 +64,35 @@ def extract_hand_landmarks(img):
         for lm in hand_landmarks.landmark:
             landmark_points.extend([lm.x, lm.y, lm.z])
         return np.array(landmark_points)
-    else:
-        return None
+    return None
 
-# Essa função tem o papel de combinar as predições dos dois modelos para poder fazer a classificação conjunta do modelo da face e da mão
-def combine_predictions(face_pred, gesture_pred):
-    # Combine as predições utilizando a média, sendo que se aparecer apenas a face seu máximo será de 50% e se aparecer apenas o gesto seu máximo tb será de 50%
-    combined_confidences = (face_pred + gesture_pred) / 2
-    dominant_class = np.argmax(combined_confidences)
-    confidence = combined_confidences[dominant_class] * 100  # Confiança final como porcentagem
-    return dominant_class, confidence
+def combine_predictions(face_image, face_landmarks, hand_landmarks):
+    face_probs = face_model.predict([np.expand_dims(face_image, axis=0), np.expand_dims(face_landmarks, axis=0)])
+    gesture_probs = gesture_model.predict(np.expand_dims(hand_landmarks, axis=0))
+    combined_probs = (face_probs + gesture_probs) / 2.0
+    final_class = np.argmax(combined_probs, axis=1)
+    return final_class, combined_probs
 
-# Carregar os modelos e seus pesos, sendo bem importante e isso é definido no código de treinamento
-num_classes = 4  # 'Feliz', 'Raiva', 'Surpreso', 'Triste'
-face_model = create_face_model((224, 224, 3), (68 * 2,), num_classes)
-# Atualize se quiser testar cos outros 2 modelos treinados da face em diferentes contextos, o que está setado é o que tem maior taxa de sucesso
-face_model.load_weights('modelo_emocao_face_4classes.weights.h5')
+def draw_text_on_image(image, text, position=(30, 30), font_scale=1, color=(0, 255, 0), thickness=2):
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    cv2.putText(image, text, position, font, font_scale, color, thickness, cv2.LINE_AA)
 
-Esse modelo foi o mais assertivo então ele foi o único gerado
-gesture_model = tf.keras.models.load_model('modelo_landmarks_gesto_emocoes_libras.h5') 
+class EmotionDetectionTransformer(VideoTransformerBase):
+    def __init__(self):
+        self.class_names = ['Feliz', 'Raiva', 'Surpreso', 'Triste']
 
-# Função usada para capturar a imagem da câmera do navegador usando Streamlit, será tirado uma imagem em tempo real e classificado em seguida
-def classify_realtime_streamlit():
-    st.title("Detecção de Emoções e Gestos em Tempo Real")
-    uploaded_image = st.camera_input("Capture uma imagem usando a câmera")
+    def transform(self, frame):
+        img = frame.to_ndarray(format="bgr24")
+        original_image = img.copy()
+        face_image_resized, face_landmarks = detect_face_and_landmarks(img)
+        hand_landmarks = extract_hand_landmarks(img)
+        if hand_landmarks is not None and face_landmarks is not None:
+            emotion_class, probabilities = combine_predictions(face_image_resized, face_landmarks, hand_landmarks)
+            emotion_label = self.class_names[int(emotion_class)]
+            precision = np.max(probabilities)
+            text = f"{emotion_label}: {precision * 100:.2f}%"
+            draw_text_on_image(original_image, text)
+        return original_image
 
-    if uploaded_image is not None:
-        # Converte a imagem capturada em um array
-        image = np.array(Image.open(uploaded_image))
-        st.image(image, caption='Imagem capturada', use_column_width=True)
-
-        class_names = ['Feliz', 'Raiva', 'Surpreso', 'Triste']
-
-        # Detectar emoção facial
-        face_region, face_landmarks = detect_face_and_landmarks(image)
-        face_prediction = np.zeros((1, num_classes))  # Previsão padrão
-
-        if face_region is not None and face_landmarks is not None and are_landmarks_valid(face_landmarks, image.shape):
-            face_region_rgb = cv2.cvtColor(face_region, cv2.COLOR_BGR2RGB)
-            face_region_resized = cv2.resize(face_region_rgb, (224, 224))
-            face_region_resized = np.expand_dims(face_region_resized.astype(np.float32) / 255.0, axis=0)
-            face_landmarks = np.expand_dims(face_landmarks, axis=0)
-
-            face_prediction = face_model.predict([face_region_resized, face_landmarks])
-
-        # Detecta os gestos da mão
-        hand_landmarks = extract_hand_landmarks(image)
-        gesture_prediction = np.zeros((1, num_classes)) 
-
-        if hand_landmarks is not None:
-            hand_landmarks = np.expand_dims(hand_landmarks, axis=0)
-            gesture_prediction = gesture_model.predict(hand_landmarks)
-
-        # Combina as predições e determinar a classe dominante
-        dominant_class, confidence = combine_predictions(face_prediction[0], gesture_prediction[0])
-
-        # Exibe o resultado na tela
-        label = f"{class_names[dominant_class]}: {confidence:.2f}%"
-        st.write(f"Emoção detectada: {label}")
-
-# Inicia a aplicação Streamlit
-if __name__ == '__main__':
-    classify_realtime_streamlit()
+st.title("Classificação de Emoções em LIBRAS em Tempo Real")
+webrtc_streamer(key="emotion-detection", video_transformer_factory=EmotionDetectionTransformer, media_stream_constraints={"video": True, "audio": False})
