@@ -13,11 +13,15 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copie todo o código da aplicação para o diretório de trabalho
 COPY . /app
 
-# Baixe o arquivo de preditores de landmarks faciais do dlib
+# Instale wget e bzip2 e outras dependências básicas
 RUN apt-get update && \
-    apt-get install -y wget bzip2 && \
-    wget http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2 -O /app/shape_predictor_68_face_landmarks.dat.bz2 && \
-    bzip2 -d /app/shape_predictor_68_face_landmarks.dat.bz2
+    apt-get install -y wget bzip2 ca-certificates && \
+    apt-get clean
+
+# Baixe e descompacte o arquivo de preditores
+RUN wget http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2 -O /app/shape_predictor_68_face_landmarks.dat.bz2 && \
+    bzip2 -dk /app/shape_predictor_68_face_landmarks.dat.bz2 && \
+    rm /app/shape_predictor_68_face_landmarks.dat.bz2
 
 # Instale dependências necessárias para o OpenCV e outras dependências do sistema
 RUN apt-get install -y libgl1-mesa-glx libglib2.0-0
