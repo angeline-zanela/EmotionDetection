@@ -2,7 +2,7 @@
 FROM python:3.8-slim
 
 # Instala dependências essenciais do sistema
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
     libsm6 \
@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y \
     libboost-all-dev \
     wget \
     python3-venv \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
 # Define o diretório de trabalho
 WORKDIR /app
