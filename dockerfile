@@ -16,9 +16,8 @@ COPY . /app
 # Baixe o arquivo de preditores de landmarks faciais do dlib
 RUN apt-get update && \
     apt-get install -y wget bzip2 && \
-    wget http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2 && \
-    bzip2 -d shape_predictor_68_face_landmarks.dat.bz2 && \
-    mv shape_predictor_68_face_landmarks.dat /app
+    wget http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2 -O /app/shape_predictor_68_face_landmarks.dat.bz2 && \
+    bzip2 -d /app/shape_predictor_68_face_landmarks.dat.bz2
 
 # Instale dependências necessárias para o OpenCV e outras dependências do sistema
 RUN apt-get install -y libgl1-mesa-glx libglib2.0-0
