@@ -13,17 +13,21 @@ RUN apt-get update && apt-get install -y \
     libgtk2.0-dev \
     libboost-all-dev \
     wget \
+    python3-venv \
     && rm -rf /var/lib/apt/lists/*
 
 # Define o diretório de trabalho
 WORKDIR /app
 
+# Cria e ativa um ambiente virtual
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
 # Copia o arquivo requirements.txt com as dependências do Python
 COPY requirements.txt .
 
-# Atualiza pip e instala as dependências do Python
-RUN python -m pip install --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
+# Instala as dependências do Python no ambiente virtual
+RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
 # Copia os arquivos de código para o container
 COPY . .
@@ -36,5 +40,5 @@ RUN wget -O shape_predictor_68_face_landmarks.dat.bz2 \
 # Exponha a porta que o Streamlit usa
 EXPOSE 8501
 
-# Comando de entrada para rodar o Streamlit
+# Comando de entrada para rodar o Streamlit no ambiente virtual
 CMD ["streamlit", "run", "app.py"]
