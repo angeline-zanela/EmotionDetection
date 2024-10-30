@@ -4,20 +4,24 @@ FROM python:3.8-slim
 # Define o diretório de trabalho
 WORKDIR /app
 
-# Instala dependências essenciais do sistema em etapas
+# Primeira etapa de instalação de dependências essenciais do sistema e limpeza de cache
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
     libsm6 \
     libxext6 \
     libxrender-dev \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+
+# Segunda etapa para instalação de outras dependências e limpeza
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1-mesa-glx \
     libglib2.0-0 \
     wget \
     python3-venv \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
-# Instala o libgtk2.0-dev em outra etapa para reduzir o uso de espaço
+# Instala o libgtk2.0-dev separadamente e limpa o cache
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgtk2.0-dev \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
