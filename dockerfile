@@ -1,7 +1,10 @@
 # Usa a imagem base oficial do Python 3.8
 FROM python:3.8-slim
 
-# Instala dependências essenciais do sistema
+# Define o diretório de trabalho
+WORKDIR /app
+
+# Instala dependências essenciais do sistema em etapas
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
@@ -10,14 +13,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrender-dev \
     libgl1-mesa-glx \
     libglib2.0-0 \
-    libgtk2.0-dev \
-    libboost-all-dev \
     wget \
     python3-venv \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
-# Define o diretório de trabalho
-WORKDIR /app
+# Instala o libgtk2.0-dev em outra etapa para reduzir o uso de espaço
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgtk2.0-dev \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
 # Cria e ativa um ambiente virtual
 RUN python3 -m venv /opt/venv
