@@ -20,11 +20,11 @@ RUN apt-get update && \
     bzip2 -d shape_predictor_68_face_landmarks.dat.bz2 && \
     mv shape_predictor_68_face_landmarks.dat /app
 
-# Instale dependências necessárias para o OpenCV
+# Instale dependências necessárias para o OpenCV e outras dependências do sistema
 RUN apt-get install -y libgl1-mesa-glx libglib2.0-0
 
 # Exponha a porta padrão do Streamlit
 EXPOSE 8501
 
-# Comando para rodar a aplicação
-CMD ["streamlit", "run", "app.py"]
+# Defina o comando de inicialização para rodar o Streamlit com o arquivo app.py
+CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
