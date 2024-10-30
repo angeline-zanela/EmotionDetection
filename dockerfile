@@ -1,13 +1,8 @@
-# Usa a imagem base oficial do Python 3.8 slim
-FROM python:3.8-slim
+# Usa a imagem base oficial do Python 3.8 slim com bullseye
+FROM python:3.8-slim-bullseye
 
 # Define o diretório de trabalho
 WORKDIR /app
-
-# Atualiza as chaves GPG antes de instalar dependências do sistema
-RUN apt-get update && apt-get install -y --no-install-recommends gnupg && \
-    apt-key adv --fetch-keys http://deb.debian.org/debian/bookworm/Release.key && \
-    rm -rf /var/lib/apt/lists/*
 
 # Instala dependências essenciais do sistema e limpa o cache
 RUN apt-get update && apt-get install -y --no-install-recommends \
